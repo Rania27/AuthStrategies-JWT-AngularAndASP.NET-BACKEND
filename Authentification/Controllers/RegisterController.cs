@@ -2,20 +2,24 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Authentification.Models;
-using Authentification.Models.AccountViewModels;
-using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Identity;
+
 using Microsoft.Extensions.Configuration;
 
-namespace Authentification.Controllers
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Authorization;
+using Authentification.Models.AccountViewModels;
+using Authentification.Models;
+
+namespace WebApplication5.Controllers
 {
     [EnableCors("CORSPolicy")]
-    
-    [Route("api/Register")]
+    [Route("api/[controller]")]
     public class RegisterController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -33,25 +37,30 @@ namespace Authentification.Controllers
             _configuration = configuration;
         }
 
-        // POST: api/token
+        // POST: api/register
         [HttpPost]
-        public async Task<IActionResult> Get( [FromBody] RegisterViewModel model)
+        public async Task<IActionResult> Get([FromBody] RegisterViewModel model)
         {
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+
+                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (result.Succeeded)
+                {
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    return Ok();
+                }
+
+
+
+
             }
 
-            var user = new ApplicationUser { UserName = model.Email, PasswordHash = model.Password };
-            var result = await _userManager.CreateAsync(user, model.Password);
-            if (result.Succeeded)
-            {
-                await _signInManager.SignInAsync(user, isPersistent: false);
-                return Ok();
-            }
             return BadRequest();
-            // DOES NOT WORK
-
         }
+
     }
 }
+
+
